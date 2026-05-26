@@ -65,9 +65,10 @@ ECR_URI="$ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/$APP_NAME"
 aws ecr get-login-password --region "$REGION" \
   | docker login --username AWS --password-stdin "$ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com"
 
-docker build -t "$APP_NAME:latest" "$PROJECT_ROOT"
-docker tag "$APP_NAME:latest" "$ECR_URI:latest"
-docker push "$ECR_URI:latest"
+docker buildx build --platform linux/amd64 \
+  -t "$ECR_URI:latest" \
+  --push \
+  "$PROJECT_ROOT"
 echo "      Pushed: $ECR_URI:latest"
 
 # ── 4. Secrets Manager — store all .env values as one JSON secret ─────────────
