@@ -75,7 +75,7 @@ echo "      Pushed: $ECR_URI:latest"
 echo "[4/9] Secrets Manager — writing secrets..."
 SECRET_NAME="$APP_NAME"
 SECRET_JSON=$(python3 - <<'PYEOF'
-import os, json
+import os, json, re
 from pathlib import Path
 
 env_file = Path(__file__).parent.parent / ".env"
@@ -84,7 +84,9 @@ for line in env_file.read_text().splitlines():
     line = line.strip()
     if line and not line.startswith("#") and "=" in line:
         k, _, v = line.partition("=")
-        data[k.strip()] = v.strip()
+        # Strip inline comments (e.g.  "value   # comment")
+        v = re.sub(r'\s+#.*$', '', v).strip()
+        data[k.strip()] = v
 print(json.dumps(data))
 PYEOF
 )
