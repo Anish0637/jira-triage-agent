@@ -6,7 +6,9 @@ Tab 2 — Triage Report  : LLM-generated markdown summary
 Tab 3 — Pending Approvals : HITL approve / reject with email notification
 """
 
+import os
 import uuid
+import boto3
 import streamlit as st
 from dotenv import load_dotenv
 
@@ -18,6 +20,92 @@ st.set_page_config(
     page_icon="🎫",
     layout="wide",
 )
+
+# ── Cognito authentication ────────────────────────────────────────────────────
+_POOL_ID   = os.getenv("COGNITO_USER_POOL_ID", "")
+_CLIENT_ID = os.getenv("COGNITO_CLIENT_ID", "")
+_CG_REGION = os.getenv("COGNITO_REGION", "us-east-1")
+
+def _cognito_login(email: str, password: str) -> dict | None:
+    client = boto3.client("cognito-idp", region_name=_CG_REGION)
+    try:
+        resp = client.initiate_auth(
+            AuthFlow="USER_PASSWORD_AUTH",
+            AuthParameters={"USERNAME": email, "PASSWORD": password},
+            ClientId=_CLIENT_ID,
+        )
+        if resp.get("ChallengeName") == "NEW_PASSWORD_REQUIRED":
+            return {"challenge": "NEW_PASSWORD_REQUIRED",
+                    "session": resp["Session"], "email": email}
+        return resp["AuthenticationResult"]
+    except (client.exceptions.NotAuthorizedException,
+            client.exceptions.UserNotFoundException):
+        return None
+
+def _cognito_set_new_password(email: str, new_password: str, session: str) -> dict | None:
+    client = boto3.client("cognito-idp", region_name=_CG_REGION)
+    try:
+        resp = client.respond_to_auth_challenge(
+            ClientId=_CLIENT_ID,
+            ChallengeName="NEW_PASSWORD_REQUIRED",
+            Session=session,
+            ChallengeResponses={"USERNAME": email, "NEW_PASSWORD": new_password},
+        )
+        return resp["AuthenticationResult"]
+    except Exception:
+        return None
+
+def _show_login():
+    st.markdown("## 🔐 Jira Triage Dashboard — Sign In")
+    with st.form("login_form"):
+        email = st.text_input("Email")
+        password = st.text_input("Password", type="password")
+        submitted = st.form_submit_button("Sign In", use_container_width=True)
+    if submitted:
+        if not _POOL_ID or not _CLIENT_ID:
+            st.session_state["authenticated"] = True
+            st.rerun()
+            return
+        result = _cognito_login(email, password)
+        if result is None:
+            st.error("Incorrect email or password.")
+        elif isinstance(result, dict) and result.get("challenge") == "NEW_PASSWORD_REQUIRED":
+            st.session_state["_cg_challenge"] = result
+            st.rerun()
+        else:
+            st.session_state["authenticated"] = True
+            st.session_state["user_email"] = email
+            st.rerun()
+
+def _show_new_password_form():
+    ch = st.session_state["_cg_challenge"]
+    st.markdown("## 🔐 Set a new password")
+    st.info("This is your first login. Please set a permanent password.")
+    with st.form("new_pw_form"):
+        pw1 = st.text_input("New password", type="password")
+        pw2 = st.text_input("Confirm password", type="password")
+        submitted = st.form_submit_button("Set Password", use_container_width=True)
+    if submitted:
+        if pw1 != pw2:
+            st.error("Passwords do not match.")
+            return
+        result = _cognito_set_new_password(ch["email"], pw1, ch["session"])
+        if result is None:
+            st.error("Failed to set password. Must be 8+ chars with upper, lower, and number.")
+        else:
+            del st.session_state["_cg_challenge"]
+            st.session_state["authenticated"] = True
+            st.session_state["user_email"] = ch["email"]
+            st.rerun()
+
+# ── Auth gate ─────────────────────────────────────────────────────────────────
+if "_cg_challenge" in st.session_state:
+    _show_new_password_form()
+    st.stop()
+
+if not st.session_state.get("authenticated"):
+    _show_login()
+    st.stop()
 
 
 PRIORITY_ICON = {
@@ -58,6 +146,13 @@ _init_state()
 
 with st.sidebar:
     st.title("⚙️ Controls")
+    user_email = st.session_state.get("user_email", "")
+    if user_email:
+        st.caption(f"Signed in as **{user_email}**")
+    if st.button("Sign Out", use_container_width=True):
+        st.session_state.clear()
+        st.rerun()
+    st.divider()
     project = st.text_input("Project Key", value="ANOPS")
     st.caption("Dashboard: Analytics-Support-Tickets (#12042)")
     st.caption("Window: last 7 days")

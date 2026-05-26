@@ -31,7 +31,10 @@
         { "name": "SMTP_USER",            "valueFrom": "arn:aws:secretsmanager:__REGION__:__ACCOUNT_ID__:secret:jira-triage-agent:SMTP_USER::" },
         { "name": "SMTP_PASSWORD",        "valueFrom": "arn:aws:secretsmanager:__REGION__:__ACCOUNT_ID__:secret:jira-triage-agent:SMTP_PASSWORD::" },
         { "name": "APPROVER_EMAIL",       "valueFrom": "arn:aws:secretsmanager:__REGION__:__ACCOUNT_ID__:secret:jira-triage-agent:APPROVER_EMAIL::" },
-        { "name": "STREAMLIT_URL",        "valueFrom": "arn:aws:secretsmanager:__REGION__:__ACCOUNT_ID__:secret:jira-triage-agent:STREAMLIT_URL::" }
+        { "name": "STREAMLIT_URL",        "valueFrom": "arn:aws:secretsmanager:__REGION__:__ACCOUNT_ID__:secret:jira-triage-agent:STREAMLIT_URL::" },
+        { "name": "COGNITO_USER_POOL_ID", "valueFrom": "arn:aws:secretsmanager:__REGION__:__ACCOUNT_ID__:secret:jira-triage-agent:COGNITO_USER_POOL_ID::" },
+        { "name": "COGNITO_CLIENT_ID",    "valueFrom": "arn:aws:secretsmanager:__REGION__:__ACCOUNT_ID__:secret:jira-triage-agent:COGNITO_CLIENT_ID::" },
+        { "name": "COGNITO_REGION",       "valueFrom": "arn:aws:secretsmanager:__REGION__:__ACCOUNT_ID__:secret:jira-triage-agent:COGNITO_REGION::" }
       ],
       "logConfiguration": {
         "logDriver": "awslogs",
