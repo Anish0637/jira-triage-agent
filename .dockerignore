@@ -1,0 +1,27 @@
+# Secrets — never bake into image
+.env
+.env.*
+!.env.example
+
+# Git
+.git/
+.gitignore
+
+# Python bytecode
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+
+# Virtual envs
+.venv/
+venv/
+env/
+
+# Dev/test artifacts
+tests/
+generate_diagram.py
+architecture.png
+
+# Infra scripts (not needed inside container)
+infra/

@@ -1,0 +1,53 @@
+{
+  "family": "jira-triage-agent",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::__ACCOUNT_ID__:role/ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "name": "jira-triage-agent",
+      "image": "__ACCOUNT_ID__.dkr.ecr.__REGION__.amazonaws.com/jira-triage-agent:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8501,
+          "protocol": "tcp"
+        }
+      ],
+      "secrets": [
+        { "name": "JIRA_BASE_URL",        "valueFrom": "arn:aws:secretsmanager:__REGION__:__ACCOUNT_ID__:secret:jira-triage-agent:JIRA_BASE_URL::" },
+        { "name": "JIRA_EMAIL",           "valueFrom": "arn:aws:secretsmanager:__REGION__:__ACCOUNT_ID__:secret:jira-triage-agent:JIRA_EMAIL::" },
+        { "name": "JIRA_API_TOKEN",       "valueFrom": "arn:aws:secretsmanager:__REGION__:__ACCOUNT_ID__:secret:jira-triage-agent:JIRA_API_TOKEN::" },
+        { "name": "JIRA_DASHBOARD_ID",    "valueFrom": "arn:aws:secretsmanager:__REGION__:__ACCOUNT_ID__:secret:jira-triage-agent:JIRA_DASHBOARD_ID::" },
+        { "name": "OPENAI_API_KEY",       "valueFrom": "arn:aws:secretsmanager:__REGION__:__ACCOUNT_ID__:secret:jira-triage-agent:OPENAI_API_KEY::" },
+        { "name": "PINECONE_API_KEY",     "valueFrom": "arn:aws:secretsmanager:__REGION__:__ACCOUNT_ID__:secret:jira-triage-agent:PINECONE_API_KEY::" },
+        { "name": "PINECONE_INDEX_NAME",  "valueFrom": "arn:aws:secretsmanager:__REGION__:__ACCOUNT_ID__:secret:jira-triage-agent:PINECONE_INDEX_NAME::" },
+        { "name": "PINECONE_CLOUD",       "valueFrom": "arn:aws:secretsmanager:__REGION__:__ACCOUNT_ID__:secret:jira-triage-agent:PINECONE_CLOUD::" },
+        { "name": "PINECONE_REGION",      "valueFrom": "arn:aws:secretsmanager:__REGION__:__ACCOUNT_ID__:secret:jira-triage-agent:PINECONE_REGION::" },
+        { "name": "SMTP_HOST",            "valueFrom": "arn:aws:secretsmanager:__REGION__:__ACCOUNT_ID__:secret:jira-triage-agent:SMTP_HOST::" },
+        { "name": "SMTP_PORT",            "valueFrom": "arn:aws:secretsmanager:__REGION__:__ACCOUNT_ID__:secret:jira-triage-agent:SMTP_PORT::" },
+        { "name": "SMTP_USER",            "valueFrom": "arn:aws:secretsmanager:__REGION__:__ACCOUNT_ID__:secret:jira-triage-agent:SMTP_USER::" },
+        { "name": "SMTP_PASSWORD",        "valueFrom": "arn:aws:secretsmanager:__REGION__:__ACCOUNT_ID__:secret:jira-triage-agent:SMTP_PASSWORD::" },
+        { "name": "APPROVER_EMAIL",       "valueFrom": "arn:aws:secretsmanager:__REGION__:__ACCOUNT_ID__:secret:jira-triage-agent:APPROVER_EMAIL::" },
+        { "name": "STREAMLIT_URL",        "valueFrom": "arn:aws:secretsmanager:__REGION__:__ACCOUNT_ID__:secret:jira-triage-agent:STREAMLIT_URL::" }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/jira-triage-agent",
+          "awslogs-region": "__REGION__",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "healthCheck": {
+        "command": ["CMD-SHELL", "curl -f http://localhost:8501/_stcore/health || exit 1"],
+        "interval": 30,
+        "timeout": 10,
+        "retries": 3,
+        "startPeriod": 60
+      }
+    }
+  ]
+}
